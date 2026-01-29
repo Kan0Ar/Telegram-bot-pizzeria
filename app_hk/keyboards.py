@@ -9,6 +9,9 @@ import sqlite3
 shop = ReplyKeyboardMarkup(keyboard=
                            [[KeyboardButton(text='Пиццы')], [KeyboardButton(text='Десерты')]], 
                            resize_keyboard=True, input_field_placeholder='А че писать')
+# замена верхней клавы
+shop_1 = InlineKeyboardMarkup(inline_keyboard=
+                              [[InlineKeyboardButton(text='Pizzas', callback_data='pizza')], [InlineKeyboardButton(text='Deserts', callback_data='desert')]])
 
 
 # это кнопки чтобы решить что добавить в меню
@@ -43,7 +46,7 @@ def pizza_f_cust(index: int, total: int, pizza_name):
             InlineKeyboardButton(text='-->', callback_data=f'pizza_{index + 1}')
         )
     buttons.append(
-        InlineKeyboardButton(text ='Добавить в корзину', callback_data='add_into_backet')
+        InlineKeyboardButton(text ='Добавить в корзину', callback_data='add_into_backet') # пока что не работает
     )
     menu = InlineKeyboardMarkup(inline_keyboard=[buttons])
     return menu
