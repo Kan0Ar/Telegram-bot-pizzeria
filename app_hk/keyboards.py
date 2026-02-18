@@ -9,12 +9,17 @@ import sqlite3
 shop = ReplyKeyboardMarkup(keyboard=
                            [[KeyboardButton(text='Пиццы')], [KeyboardButton(text='Десерты')]], 
                            resize_keyboard=True, input_field_placeholder='А че писать')
-# замена верхней клавы
+# замена верхней клавы # ТУТ ТОЖЕ ПОМЕНЯЛ С PIZZA НА MENU_PIZZA
 shop_1 = InlineKeyboardMarkup(inline_keyboard=
-                              [[InlineKeyboardButton(text='Pizzas', callback_data='pizza')], [InlineKeyboardButton(text='Deserts', callback_data='desert')]])
+                              [[InlineKeyboardButton(text='Pizzas', callback_data='menu_pizza')], [InlineKeyboardButton(text='Deserts', callback_data='desert')]])
+
+# тест попробовать для админа добавление товара и после через if-else переписывать данные
+#choose_add_database = ReplyKeyboardMarkup(keyboard=
+#                                          [[KeyboardButton(text='Добавление пиццы'), KeyboardButton(text='Добавление десерта')]]
+#                                            resize_keyboard=True, input_field_placeholder='Выбор')
 
 
-# это кнопки чтобы решить что добавить в меню
+# это кнопки чтобы решить что добавить в меню админу
 choose_add_shop = InlineKeyboardMarkup(inline_keyboard=
                            [[InlineKeyboardButton(text='Пиццы', callback_data='pizza')], [InlineKeyboardButton(text='Десерты', callback_data='desert')]])
 # это кнопки для вызова админ панели
@@ -32,30 +37,48 @@ adding_new = ReplyKeyboardMarkup(keyboard=
 
 
 # этот пиздец для листания товаров <-- -->
-def pizza_f_cust(index: int, total: int, pizza_name):
+def pizza_f_cust(index: int, total: int, pizzas):
     buttons = []
     if index > 0:
         buttons.append(
             InlineKeyboardButton(text='<--', callback_data=f'pizza_{index - 1}')
         )
     buttons.append(
-        InlineKeyboardButton(text=pizza_name[index][0], callback_data='none')
+        InlineKeyboardButton(text=pizzas[index][1], callback_data='none')
     )
     if index < total - 1:
         buttons.append(
             InlineKeyboardButton(text='-->', callback_data=f'pizza_{index + 1}')
         )
     buttons.append(
-        InlineKeyboardButton(text ='Добавить в корзину', callback_data='add_into_backet') # пока что не работает
+        InlineKeyboardButton(text ='Добавить в корзину', callback_data=f'add_{pizzas[index][0]}') # пока что не работает
     )
     menu = InlineKeyboardMarkup(inline_keyboard=[buttons])
     return menu
 
 
+"""
+# этот пиздец для листания товаров <-- -->
+def pizza_f_cust(index: int, total: int, pizzas):
+    buttons = []
+    if index > 0:
+        buttons.append(
+            InlineKeyboardButton(text='<--', callback_data=f'pizza_{index - 1}')
+        )
+    buttons.append(
+        InlineKeyboardButton(text=pizzas[index][1], callback_data='none')
+    )
+    if index < total - 1:
+        buttons.append(
+            InlineKeyboardButton(text='-->', callback_data=f'pizza_{index + 1}')
+        )
+    buttons.append(
+        InlineKeyboardButton(text ='Добавить в корзину', callback_data=f'add_{pizzas[index][0]}') # пока что не работает
+    )
+    menu = InlineKeyboardMarkup(inline_keyboard=[buttons])
+    return menu
 
-
-
-
+"""
 
 
 """def pizza_f_cust(index:int, total: int):

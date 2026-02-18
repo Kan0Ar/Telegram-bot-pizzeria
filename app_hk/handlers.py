@@ -3,13 +3,19 @@ from aiogram import Bot, Dispatcher, Router, F
 from aiogram.filters import Command, CommandStart
 from aiogram.types import Message, CallbackQuery
 import app_hk.keyboards as kb
-from dotenv import find_dotenv, load_dotenv
+from dotenv import find_dotenv, load_dotenv # а не, все ок
 import os
 import sqlite3
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
 from app_hk.keyboards import pizza_f_cust
-from aiogram.types import InputMediaPhoto
+from aiogram.types import InputMediaPhoto # че это
+
+
+# переписать часть с выдачей пицц, так как он ловит когда я нажимаю в админке на добавление
+# пицц, а он ебащит мне выбор как при заказе
+
+
 
 load_dotenv(find_dotenv())
 router = Router()
@@ -43,7 +49,7 @@ async def start(message: Message):
 def pizzas_bd_connect():
     connection = sqlite3.connect('fastfood_database.db')
     cursor = connection.cursor()
-    cursor.execute('SELECT name, description, price, photo, product FROM pizzas')
+    cursor.execute('SELECT id, name, description, price, photo, product FROM pizzas') # убрал id
     pizzas = cursor.fetchall() # возвращает кортеж
     connection.close()
     return pizzas
@@ -59,26 +65,29 @@ def pizzas_test_con_bd_and_keyboard(): # добавил в фукции без �
 
 # тут вывод позиций пицц
 #@router.callback_query(lambda c: c.data and c.data.startswith("pizza_"))
-@router.callback_query(lambda c: c.data == "pizza")
-async def pizza_navigation(callback: CallbackQuery): # это не из-за асинхронности
+
+async def show_pizza(callback: CallbackQuery, index: int):
     pizzas = pizzas_bd_connect()
     pizzas = [p for p in pizzas if p[-1] == 'pizza'] # из 4 на -1
     if not pizzas:
         await callback.message.answer('Пицц нет, приходите позже!')
         return
-    await callback.message.answer('Вы нажали на кнопку пицц.')
-    index = 0#int(callback.data.split("_")[1]) # пока коммент
+    # ограничение 0
+    if index < 0:
+        index = 0
+    if index >=len(pizzas):
+        index = len(pizzas)-1 # хзе
     pizza = pizzas[index]
     #photo_file = f'temp_{pizza[3]}' # это пока не трогаю, позже посмотрю что можно сделать
     #with open(photo_file, 'wb') as f:
         #f.write(photo_file)
 
     # создаём актуальную клавиатуру
-    kb = pizza_f_cust(0, len(pizzas), pizzas)
+    kb = pizza_f_cust(index, len(pizzas), pizzas)
 
     # обновляем сообщение
     await callback.message.edit_text( # потом вернуть с картинка + проверить работает ли если больше 1 позиции + сделать нейтрал функцию для шаблона под остальное
-        f"Название: {pizza[0]}\nОписание: {pizza[1]}\nЦена: {pizza[2]}",
+        f"Название: {pizza[1]}\nОписание: {pizza[2]}\nЦена: {pizza[3]}",
         reply_markup=kb
     )
 #     await callback.message.edit_media(
@@ -91,6 +100,17 @@ async def pizza_navigation(callback: CallbackQuery): # это не из-за а�
     
 
     await callback.answer()
+
+# вход в меню
+@router.callback_query(F.data == 'menu_pizza')
+async def pizza_start(callback: CallbackQuery):
+    await show_pizza(callback, index=0)
+
+# листать
+@router.callback_query(F.data.startswith("pizza_"))
+async def pizza_navigation(callback: CallbackQuery):
+    index = int(callback.data.split("_")[1])
+    await show_pizza(callback, index)
 
 
 # попробовать прописать функцию чтобы не писать дважды один и тот же код
