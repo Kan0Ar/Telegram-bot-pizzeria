@@ -8,12 +8,13 @@ cursor = connection.cursor()
 def main():
     cursor.execute("""
                     CREATE TABLE IF NOT EXISTS orders(
-                   id INTEGER PRIMARY KEY AUTOINCREMENT,
-                   userid
-                   user TEXT,
-                   number INTEGER,
-                   pizza TEXT,
-                   desert TEXT
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    userid INTEGER,
+                    user TEXT,
+                    price INTEGER,
+                    count INTEGER,
+                    name_product TEXT,
+                    product TEXT
                    )
             """) # потом добавить геопозицию или тип того
     # сделать отдельное бд для заказов чтобы можно было добавить данные оплаты
@@ -21,5 +22,5 @@ def main():
     connection.close()
 
 
-#if __name__ == '__main__':
-#    main()
+if __name__ == '__main__':
+    main()

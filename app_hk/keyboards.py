@@ -2,16 +2,53 @@ from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardBut
 from aiogram.utils.keyboard import ReplyKeyboardBuilder, InlineKeyboardBuilder
 #from bd_test import bd_fastfood
 import sqlite3
+from aiogram.filters.callback_data import CallbackData
 
 
+
+
+########################
+# обновляю клавиатуру
+
+class ProductNav(CallbackData, prefix = 'nav'):
+    category: str
+    index: int # дописать 
+#######################
+
+
+
+def pizza_f_cust(index: int, total: int, products, category: str):
+    buttons = []
+    if index > 0:
+        buttons.append(
+            InlineKeyboardButton(text='<--', callback_data=f'nav:{category}:{index - 1}')
+        )
+    buttons.append(
+        InlineKeyboardButton(text=products[index][1], callback_data='none')
+    )
+    if index < total - 1:
+        buttons.append(
+            InlineKeyboardButton(text='-->', callback_data=f'nav:{category}:{index + 1}')
+        )
+    buttons.append(
+                InlineKeyboardButton(text=f'Добавить в корзину: {products[index][1]}', callback_data=f'add:{category}:{index}')
+#        InlineKeyboardButton(text ='Добавить в корзину', callback_data=f'add:{category[index][0]}') # пока что не работает
+    )
+    menu = InlineKeyboardMarkup(inline_keyboard=[buttons])
+    return menu
+########################
 
 # кнопки для выбора пицц и десертов для заказа(работают)
 shop = ReplyKeyboardMarkup(keyboard=
                            [[KeyboardButton(text='Пиццы')], [KeyboardButton(text='Десерты')]], 
                            resize_keyboard=True, input_field_placeholder='А че писать')
-# замена верхней клавы # ТУТ ТОЖЕ ПОМЕНЯЛ С PIZZA НА MENU_PIZZA
+
+
 shop_1 = InlineKeyboardMarkup(inline_keyboard=
-                              [[InlineKeyboardButton(text='Pizzas', callback_data='menu_pizza')], [InlineKeyboardButton(text='Deserts', callback_data='desert')]])
+                            [[InlineKeyboardButton(text='Pizzas', callback_data='menu_pizza')], 
+                            [InlineKeyboardButton(text='Deserts', callback_data='menu_desert')],
+                            [InlineKeyboardButton(text='Drinks', callback_data='menu_drinks')],
+                            ])
 
 # тест попробовать для админа добавление товара и после через if-else переписывать данные
 #choose_add_database = ReplyKeyboardMarkup(keyboard=
@@ -21,7 +58,10 @@ shop_1 = InlineKeyboardMarkup(inline_keyboard=
 
 # это кнопки чтобы решить что добавить в меню админу
 choose_add_shop = InlineKeyboardMarkup(inline_keyboard=
-                           [[InlineKeyboardButton(text='Пиццы', callback_data='pizza')], [InlineKeyboardButton(text='Десерты', callback_data='desert')]])
+                           [[InlineKeyboardButton(text='Пиццы', callback_data='pizza')], 
+                            [InlineKeyboardButton(text='Десерты', callback_data='desert')],
+                            [InlineKeyboardButton(text='Напитки', callback_data='drinks')]
+                            ])
 # это кнопки для вызова админ панели
 adminpaneledit = ReplyKeyboardMarkup(keyboard=
                                     [[KeyboardButton(text='Admin Panel')], [KeyboardButton(text='Shop')]], 
@@ -36,7 +76,8 @@ adding_new = ReplyKeyboardMarkup(keyboard=
                                     [KeyboardButton(text='Новый напиток')]], resize_keyboard=True, input_field_placeholder='Нажми ты че')
 
 
-# этот пиздец для листания товаров <-- -->
+"""# этот пиздец для листания товаров <-- -->
+
 def pizza_f_cust(index: int, total: int, pizzas):
     buttons = []
     if index > 0:
@@ -54,7 +95,33 @@ def pizza_f_cust(index: int, total: int, pizzas):
         InlineKeyboardButton(text ='Добавить в корзину', callback_data=f'add_{pizzas[index][0]}') # пока что не работает
     )
     menu = InlineKeyboardMarkup(inline_keyboard=[buttons])
-    return menu
+    return menu"""
+
+
+# этот пиздец для листания товаров <-- -->
+
+"""def pizza_f_cust(index: int, total: int, products, category: str):
+    buttons = []
+    if index > 0:
+        buttons.append(
+            InlineKeyboardButton(text='<--', callback_data=f'nav:{category}:{index - 1}')
+        )
+    buttons.append(
+        InlineKeyboardButton(text=products[index][1], callback_data='none')
+    )
+    if index < total - 1:
+        buttons.append(
+            InlineKeyboardButton(text='-->', callback_data=f'nav:{category}:{index + 1}')
+        )
+    buttons.append(
+        InlineKeyboardButton(text ='Добавить в корзину', callback_data=f'add:{category[index][0]}') # пока что не работает
+    )
+    menu = InlineKeyboardMarkup(inline_keyboard=[buttons])
+    return menu"""
+
+
+
+
 
 
 """

@@ -10,6 +10,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
 from app_hk.keyboards import pizza_f_cust
 from aiogram.types import InputMediaPhoto # че это
+from aiogram.filters.callback_data import CallbackData
 
 
 # переписать часть с выдачей пицц, так как он ловит когда я нажимаю в админке на добавление
@@ -38,7 +39,7 @@ async def start(message: Message):
 # команда /help с доступом к панели администратора
 # для простых пользователей описание бота и с открытием возможности отправить жалобу и т.д.
 @router.message(Command('help'))
-async def start(message: Message):
+async def help(message: Message):
     if message.from_user.id == int(os.getenv('ADMINID')):
         await message.answer('Открыт доступ к панели администратора.', reply_markup=kb.adminpaneledit)
         await message.answer('Вы можете зарегистироваться как администратор!')
@@ -66,7 +67,7 @@ def pizzas_test_con_bd_and_keyboard(): # добавил в фукции без �
 # тут вывод позиций пицц
 #@router.callback_query(lambda c: c.data and c.data.startswith("pizza_"))
 
-async def show_pizza(callback: CallbackQuery, index: int):
+"""async def show_pizza(callback: CallbackQuery, index: int):
     pizzas = pizzas_bd_connect()
     pizzas = [p for p in pizzas if p[-1] == 'pizza'] # из 4 на -1
     if not pizzas:
@@ -85,18 +86,17 @@ async def show_pizza(callback: CallbackQuery, index: int):
     # создаём актуальную клавиатуру
     kb = pizza_f_cust(index, len(pizzas), pizzas)
 
-    # обновляем сообщение
-    await callback.message.edit_text( # потом вернуть с картинка + проверить работает ли если больше 1 позиции + сделать нейтрал функцию для шаблона под остальное
-        f"Название: {pizza[1]}\nОписание: {pizza[2]}\nЦена: {pizza[3]}",
-        reply_markup=kb
-    )
-#     await callback.message.edit_media(
-#         media= InputMediaPhoto(
-# #            media=pizza[3],
-#             caption=f"Название: {pizza[0]}\nОписание: {pizza[1]}\nЦена:{pizza[2]}",
-#             parse_mode='Markdown'),
-#             reply_markup=kb
-#         )
+#    # обновляем сообщение
+#    await callback.message.edit_text( # потом вернуть с картинка + проверить работает ли если больше 1 позиции + сделать нейтрал функцию для шаблона под остальное
+#        f"Название: {pizza[1]}\nОписание: {pizza[2]}\nЦена: {pizza[3]}",
+#        reply_markup=kb
+#    )
+    await callback.message.edit_media(
+        media= InputMediaPhoto(
+            media=pizza[4],
+            caption=f"Название: {pizza[1]}\nОписание: {pizza[2]}\nЦена: {pizza[3]}",
+            parse_mode='Markdown'), reply_markup=kb
+        )
     
 
     await callback.answer()
@@ -106,12 +106,71 @@ async def show_pizza(callback: CallbackQuery, index: int):
 async def pizza_start(callback: CallbackQuery):
     await show_pizza(callback, index=0)
 
+# вход в меню
+@router.callback_query(F.data == 'menu_desert')
+async def pizza_start(callback: CallbackQuery):
+    await show_pizza(callback, index=0)
+
 # листать
 @router.callback_query(F.data.startswith("pizza_"))
 async def pizza_navigation(callback: CallbackQuery):
     index = int(callback.data.split("_")[1])
-    await show_pizza(callback, index)
+    await show_pizza(callback, index)"""
 
+
+# переписываю эту часть чтобы сделать более универсальной для всех продуктов
+async def show_products(callback: CallbackQuery, index: int, category: str):
+    products = pizzas_bd_connect()
+    products = [p for p in products if p[-1] == category] # из 4 на -1
+    if not products:
+        await callback.message.answer('Пицц нет, приходите позже!')
+        return
+    # ограничение 0
+    if index < 0:
+        index = 0
+    if index >=len(products):
+        index = len(products)-1 # хзе
+    product = products[index]
+
+    # создаём актуальную клавиатуру
+    kb = pizza_f_cust(index, len(products), products, category)
+
+    await callback.message.edit_media(
+        media= InputMediaPhoto(
+            media=product[4],
+            caption=f"Название: {product[1]}\nОписание: {product[2]}\nЦена: {product[3]}",
+            parse_mode='Markdown'), reply_markup=kb
+        )
+    
+
+    await callback.answer()
+
+# вход в меню
+@router.callback_query(F.data.startswith('menu_'))
+async def category_start(callback: CallbackQuery):
+    category = callback.data.split("_")[1]
+    await show_products(callback, 0, category)
+
+# листание
+@router.callback_query(F.data.startswith("nav:"))
+async def navifation(callback: CallbackQuery):
+    _, category, index = callback.data.split(":")
+    await show_products(callback, int(index), category)
+
+# кнопка добавления в корзину
+@router.callback_query(F.data.startswith("add:"))
+async def user_basket_add(callback: CallbackQuery):
+    _, category, index = callback.data.split(":")
+    connection = sqlite3.connect('user_database.db')
+    cursor = connection.cursor()
+    user_order = [1, "name", 2, 2, {int(index)}, {category}]
+    cursor.execute(f'INSERT INTO orders VALUES (NULL, ?, ?, ?, ?, ?, ?)' (user_order))
+#    cursor.execute(f'INSERT INTO orders (userid, user, price, count, name_product, product) VALUES ({callback.from_user.id}, name, 2, 2, {category[index]}, {category})')
+    cursor.close()
+    callback.message.answer('Товар добавлен в корзину!')
+
+
+#    await show_products(callback, int(index), category)
 
 # попробовать прописать функцию чтобы не писать дважды один и тот же код
 # объединив данные
@@ -174,7 +233,8 @@ async def start(message: Message):
 async def add_p(callback: CallbackQuery, state: FSMContext):
     await callback.answer('Вы нажали кнопку добавления товара!')
     await state.set_state(AddNewProducts.product)
-    await callback.message.answer('Выберите категорию:', reply_markup=kb.choose_add_shop)
+    await callback.message.answer('Выберите категорию:', reply_markup=kb.choose_add_shop) 
+    # все ок, работает и для десертов
 
 
 # Получаем, какую категорию выбрали
@@ -273,3 +333,5 @@ async def user_card(callback: CallbackQuery):
 # добавить кнопки для добавления, удаления товара(с добавлением fsmcontext(для цены картинки описания и т.д)), проверки количества товаров
 # просмотр всех товаров с кнопками влево вправо, на главную
 # дописать херню с админкой
+
+#@router.callback_query()
