@@ -13,10 +13,10 @@ def main():
                     user TEXT,
                     price INTEGER,
                     count INTEGER,
-                    name_product TEXT,
+                    name_product INTEGER, 
                     product TEXT
                    )
-            """) # потом добавить геопозицию или тип того
+            """) # потом добавить геопозицию или тип того                  # Я ТУТ ПОМЕНЯЛ В ТЕКСТА НА ЧИСЛА В NAME_PRODUCT
     # сделать отдельное бд для заказов чтобы можно было добавить данные оплаты
     # карта, анал
     connection.close()
