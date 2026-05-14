@@ -49,25 +49,30 @@ def pizza_f_cust(index: int, total: int, products, category: str):
 
 # прописать клавиатуру для корзины пользователя
 # копирую свою листалку 
-def users_order_busket(id: int, total: int, products, category: str):
+# айди должен идти от пользователя
+# тотал для всего списка заказов который сделал пользователь
+# категория для сортировки какой продукт к какому идет
+# также должен быть доп айди для продукта который будет подтягиваться из основной бд
+# переписать так чтобы все заказы лежали в одной бд(пиццы, десерты, напитки)
+def users_order_busket(index: int, total: int, orders): # не уверен нужны ли категории
     buttons_order = []
-    if id > 0:
+    if index > 0:
         buttons_order.append(
-            InlineKeyboardButton(text='<--', callback_data=f'orders:{category}:{id - 1}')
+            InlineKeyboardButton(text='<--', callback_data=f'orders_nav:{index - 1}')
         )
     buttons_order.append(
-        InlineKeyboardButton(text=products[id][1], callback_data='none')
+        InlineKeyboardButton(text=orders[index][1], callback_data='none')
     )
-    if id < total - 1:
+    if index < total - 1:
         buttons_order.append(
-            InlineKeyboardButton(text='-->', callback_data=f'orders:{category}:{id + 1}')
+            InlineKeyboardButton(text='-->', callback_data=f'orders_nav:{index + 1}')
         )
 #    buttons_order.append(
 #                InlineKeyboardButton(text=f'Добавить в корзину: {products[id][1]}', callback_data=f'add:{category}:{id}')
 #        InlineKeyboardButton(text ='Добавить в корзину', callback_data=f'add:{category[index][0]}') # пока что не работает
 #    )
-    menu = InlineKeyboardMarkup(inline_keyboard=[buttons_order])
-    return menu
+    return InlineKeyboardMarkup(inline_keyboard=[buttons_order])
+
 
 
 
@@ -82,6 +87,7 @@ shop_1 = InlineKeyboardMarkup(inline_keyboard=
                             [[InlineKeyboardButton(text='Pizzas', callback_data='menu_pizza')], 
                             [InlineKeyboardButton(text='Deserts', callback_data='menu_desert')],
                             [InlineKeyboardButton(text='Drinks', callback_data='menu_drinks')],
+                            [InlineKeyboardButton(text='Orders', callback_data='orders')]
                             ])
 
 # тест попробовать для админа добавление товара и после через if-else переписывать данные
@@ -109,105 +115,3 @@ adding_new = ReplyKeyboardMarkup(keyboard=
                                     [[KeyboardButton(text='Новая пицца')], [KeyboardButton(text='Новый Десерт')], 
                                     [KeyboardButton(text='Новый напиток')]], resize_keyboard=True, input_field_placeholder='Нажми ты че')
 
-
-"""# этот пиздец для листания товаров <-- -->
-
-def pizza_f_cust(index: int, total: int, pizzas):
-    buttons = []
-    if index > 0:
-        buttons.append(
-            InlineKeyboardButton(text='<--', callback_data=f'pizza_{index - 1}')
-        )
-    buttons.append(
-        InlineKeyboardButton(text=pizzas[index][1], callback_data='none')
-    )
-    if index < total - 1:
-        buttons.append(
-            InlineKeyboardButton(text='-->', callback_data=f'pizza_{index + 1}')
-        )
-    buttons.append(
-        InlineKeyboardButton(text ='Добавить в корзину', callback_data=f'add_{pizzas[index][0]}') # пока что не работает
-    )
-    menu = InlineKeyboardMarkup(inline_keyboard=[buttons])
-    return menu"""
-
-
-# этот пиздец для листания товаров <-- -->
-
-"""def pizza_f_cust(index: int, total: int, products, category: str):
-    buttons = []
-    if index > 0:
-        buttons.append(
-            InlineKeyboardButton(text='<--', callback_data=f'nav:{category}:{index - 1}')
-        )
-    buttons.append(
-        InlineKeyboardButton(text=products[index][1], callback_data='none')
-    )
-    if index < total - 1:
-        buttons.append(
-            InlineKeyboardButton(text='-->', callback_data=f'nav:{category}:{index + 1}')
-        )
-    buttons.append(
-        InlineKeyboardButton(text ='Добавить в корзину', callback_data=f'add:{category[index][0]}') # пока что не работает
-    )
-    menu = InlineKeyboardMarkup(inline_keyboard=[buttons])
-    return menu"""
-
-
-
-
-
-
-"""
-# этот пиздец для листания товаров <-- -->
-def pizza_f_cust(index: int, total: int, pizzas):
-    buttons = []
-    if index > 0:
-        buttons.append(
-            InlineKeyboardButton(text='<--', callback_data=f'pizza_{index - 1}')
-        )
-    buttons.append(
-        InlineKeyboardButton(text=pizzas[index][1], callback_data='none')
-    )
-    if index < total - 1:
-        buttons.append(
-            InlineKeyboardButton(text='-->', callback_data=f'pizza_{index + 1}')
-        )
-    buttons.append(
-        InlineKeyboardButton(text ='Добавить в корзину', callback_data=f'add_{pizzas[index][0]}') # пока что не работает
-    )
-    menu = InlineKeyboardMarkup(inline_keyboard=[buttons])
-    return menu
-
-"""
-
-
-"""def pizza_f_cust(index:int, total: int):
-    buttons = []
-    if index > 1:
-        buttons.append(InlineKeyboardButton(text='<--', callback_data=f'pizza_{index - 1}'))
-    buttons.append(InlineKeyboardButton(text=f'pizza_{index}', callback_data=f'pizza_{index}'))
-    if index < total - 1:
-        buttons.append(InlineKeyboardButton(text='-->', callback_data=f'pizza_{index + 1}'))
-    menu = InlineKeyboardMarkup(inline_keyboard=[buttons])
-    return menu"""
-
-
-"""async def pizzas_for_customers(index: int, total: int):
-    buttons_for_pizzas = []
-    index = 0
-    if index > 0:
-        buttons_for_pizzas.append(InlineKeyboardButton(text='  <--  ', callback_data=f'pizza{index-1}'))
-    buttons_for_pizzas.append(InlineKeyboardButton(text=f'pizza{index+1}', callback_data='null'))
-    if index < total -1:
-        buttons_for_pizzas.append(InlineKeyboardButton(text='  -->  ', callback_data=f'pizza{index+1}'))
-    return InlineKeyboardMarkup(inline_keyboard=[buttons_for_pizzas])"""
-    
-
-
-
-
-#pizzas_asker = InlineKeyboardMarkup(inline_keyboard=(
-#                                    [[InlineKeyboardButton(text='Вперед', callback_data='')], [InlineKeyboardButton(text='Название?', callback_data='')], 
-#                                    [InlineKeyboardButton(text='Назад', callback_data='')]], [InlineKeyboardButton(text='Добавить в корзину', callback_data='')]
-#                                    ))

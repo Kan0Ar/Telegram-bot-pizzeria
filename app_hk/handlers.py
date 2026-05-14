@@ -8,7 +8,7 @@ import os
 import sqlite3
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
-from app_hk.keyboards import pizza_f_cust
+from app_hk.keyboards import pizza_f_cust, users_order_busket
 from aiogram.types import InputMediaPhoto # че это
 from aiogram.filters.callback_data import CallbackData
 
@@ -54,7 +54,7 @@ async def help(message: Message):
 # подключение к бд
 def pizzas_bd_connect():
     connection = sqlite3.connect('fastfood_database.db')
-    cursor = connection.cursor()
+    cursor = connection.cursor() # МОГУ ПОТОМ ПЕРЕПИСАТЬ БОЛЕЕ УНИВЕРСАЛЬНО ЧЕРЕЗ IF - ELSE ПОД РАЗНЫЕ БД
     cursor.execute('SELECT id, name, description, price, photo, product FROM pizzas') # убрал id
     pizzas = cursor.fetchall() # возвращает кортеж
     connection.close()
@@ -135,17 +135,134 @@ async def user_basket_add(callback: CallbackQuery):
     callback.message.answer('Товар добавлен в корзину!')
 
 # ПЕРЕПИСАТЬ ЧАСТЬ ДЛЯ ПОЛЬЗОВАТЕЛЕЙ БД
+
+# прописать клавиатуру для корзины пользователя
+# копирую свою листалку 
+# айди должен идти от пользователя
+# тотал для всего списка заказов который сделал пользователь
+# категория для сортировки какой продукт к какому идет
+# также должен быть доп айди для продукта который будет подтягиваться из основной бд
+# переписать так чтобы все заказы лежали в одной бд(пиццы, десерты, напитки)
+# def users_order_busket(id_user: int, total: int, products, category: str, id_bd: int): # не уверен нужны ли категории
+
 @router.callback_query(F.data.startswith('menu_'))
 async def category_start(callback: CallbackQuery):
     category = callback.data.split("_")[1]
-    await show_products(callback, 0, category) 
-@router.callback_query(F.data.startswith("orders:"))
-async def user_orders(callback: CallbackQuery):
-    _, category, product_id = callback.data.split(":")
+    await show_products(callback, 0, category)
+
+# ПОТОМ ЧУТКА ПОМЕНЯТЬ И СДЕЛАТЬ ПОЧИЩЕ 
+def user_order_test_db(userid):
     connection = sqlite3.connect('user_database.db')
-    cursor = connection.cursor()
-    cursor.executemany('SELECT count, name_product, product FROM orders WHERE id = ?', (callback.from_user.id))
-    user_order_buscket_onlain = []
+    cursor = connection.cursor() # МОГУ ПОТОМ ПЕРЕПИСАТЬ БОЛЕЕ УНИВЕРСАЛЬНО ЧЕРЕЗ IF - ELSE ПОД РАЗНЫЕ БД
+    # прописать чтобы в бд от количества менялся прайс(или сделать это отдельно)
+    cursor.execute('SELECT price, count, name_product, product FROM orders WHERE userid = ?', (userid,)) # поменял с id на userid,
+    orders_ = cursor.fetchone() # возвращает кортеж
+    connection.close()
+    return orders_
+
+def connect_menu_database(product_id):
+    connection = sqlite3.connect('fastfood_database.db')
+    cursor = connection.cursor() # МОГУ ПОТОМ ПЕРЕПИСАТЬ БОЛЕЕ УНИВЕРСАЛЬНО ЧЕРЕЗ IF - ELSE ПОД РАЗНЫЕ БД
+    # прописать чтобы в бд от количества менялся прайс(или сделать это отдельно)
+    cursor.execute('SELECT name, description, price, photo, product FROM pizzas WHERE id = ?', (product_id,)) # поменял с id на userid,
+    orders_ = cursor.fetchone() # возвращает кортеж
+    connection.close()
+    return orders_
+
+
+# def user_order_test_db_connection(id): # бля в этом случае не понимаю как передать данные 
+#     ordder_test = user_order_test_db(username=id) # ??????????????????????????????????????????????????????????????
+#     first_al = ordder_test[0]
+#     last_al = ordder_test[-1] # id: int, total: int, products, category: str
+#     menu_user_orders = users_order_busket(ordder_test.id(first_al), ordder_test.total(last_al), ) # не помню правильно тут или нет( с ласт индексом) # поменял с index на total
+#     return menu_user_orders
+
+
+@router.callback_query(F.data == "orders")
+async def user_orders(callback: CallbackQuery):
+    await show_user_orders(callback, 0)
+
+@router.callback_query(F.data.startswith("orders_nav:"))
+async def orders_navigation(callback: CallbackQuery):
+    index = int(callback.data.split(':')[1])
+    await show_user_orders(callback, index)
+
+
+#@router.callback_query(F.data.startswith("orders:"))
+async def show_user_orders(callback: CallbackQuery, index: int):
+    user_busket_id = user_order_test_db(userid=callback.from_user.id)
+    if not user_busket_id:
+        await callback.message.answer('ниче не заказано так-то')
+        return
+    if index < 0:
+        index = 0
+    if index >= len(user_busket_id):
+        index = len(user_busket_id) - 1
+
+    order = user_busket_id[index]
+    price, count, product_id, category = order
+    product = connect_menu_database(product_id=product_id)
+
+    name = product[0]
+    description = product[1]
+    kb = users_order_busket(index, len(user_busket_id), user_busket_id)
+
+    await callback.message.edit_text(
+        f"🧺 {name}\n\n"
+        f"{description}\n\n"
+        f"Количество: {count}\n"
+        f"Цена: {price * count}",
+        reply_markup=kb
+    )
+
+    await callback.answer()
+    
+    
+    
+
+
+
+
+
+
+    # user_order_buscket_onlain = user_order_test_db(username=callback.from_user.id)
+    # _, category, product_id = callback.data.split(":")
+    
+    # if user_order_buscket_onlain:
+    #     await callback.message.answer('Ваша корзина')
+    #     await callback.message.edit_media(
+    #     media= InputMediaPhoto(
+    #         media=user_order_buscket_onlain[4],
+    #         caption=f"Название: {user_order_buscket_onlain[1]}\nОписание: {user_order_buscket_onlain[2]}\nЦена: {user_order_buscket_onlain[3]}",
+    #         parse_mode='Markdown'), reply_markup=kb
+    #     )
+    # else:
+    #         await callback.message.answer('Корзина пуста.')
+
+
+    # products = [p for p in products if p[-1] == category] # из 4 на -1
+    # if not products:
+    #     await callback.message.answer('Пицц нет, приходите позже!')
+    #     return
+    # # ограничение 0
+    # if index < 0:
+    #     index = 0
+    # if index >=len(products):
+    #     index = len(products)-1 # хзе
+    # product = products[index]
+
+    # # создаём актуальную клавиатуру
+    # kb = pizza_f_cust(index, len(products), products, category)
+
+    # await callback.message.edit_media(
+    #     media= InputMediaPhoto(
+    #         media=product[4],
+    #         caption=f"Название: {product[1]}\nОписание: {product[2]}\nЦена: {product[3]}",
+    #         parse_mode='Markdown'), reply_markup=kb
+    #     )
+    
+
+    # await callback.answer()
     # ПЕРЕПИСАТЬ ЭТУ ЧАСТЬ НА ТО ЧТО ВМЕСТО ID Я БУДУ БРАТЬ НАЗВАНИЕ ПРОДУКТА
 
 
@@ -154,44 +271,6 @@ async def user_orders(callback: CallbackQuery):
 
 
 #    await show_products(callback, int(index), category)
-
-# попробовать прописать функцию чтобы не писать дважды один и тот же код
-# объединив данные
-
-
-"""@router.callback_query(lambda c: c.data and c.data.startswith("pizza_"))
-async def desert_navigation(callback: CallbackQuery):
-    pizzas = pizzas_bd_connect()
-    pizzas = [p for p in pizzas if p[4] == 'desert']
-    if not pizzas:
-        await callback.answer('Них нету(((')
-        return
-    await callback.answer('Вы нажали на кнопку десертов.')
-    index = int(callback.data.split("_")[1])
-    pizza = pizzas[index]
-#    photo_file = f'temp_{pizza[3]}'
-#    with open(photo_file, 'wb') as file:
-#        file.write(photo_blob)
-    
-
-    # создаём актуальную клавиатуру
-    kb = pizza_f_cust(index, len(pizzas), pizzas)
-
-    # обновляем сообщение
-    await callback.message.edit_media(
-        media= InputMediaPhoto(
-            media=pizza[3],
-            caption=f"Название: {pizza[0]}\nОписание: {pizza[1]}\nЦена:{pizza[2]}",
-            parse_mode='Markdown'),
-        reply_markup=kb
-        )
-#        f"Название: {pizza[0]}\nОписание: {pizza[1]}\nЦена:{pizza[2]},", #{pizza[3]}",
-#        reply_markup=kb
-
-    await callback.answer()"""
-
-
-
 
     #, reply_markup=pizzas)
 # так, мне нужно при нажатии на кнопку пиццы меня перекидывало на inline клавиатуру
